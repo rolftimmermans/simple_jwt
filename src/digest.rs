@@ -51,7 +51,7 @@ fn _hs_signature(secret: &str,
     let message_digest = create_message_digest(alg);
     let mut signer = try!(Signer::new(message_digest, &key));
     try!(signer.update(data.as_bytes()));
-    let byte_vec = try!(signer.finish());
+    let byte_vec = try!(signer.sign_to_vec());
     Ok(byte_vec)
 }
 
@@ -76,7 +76,7 @@ pub fn rsa_signature(pem_string: &str,
     let key = try!(PKey::from_rsa(rsa));
     let mut signer = try!(Signer::new(message_digest, &key));
     try!(signer.update(data.as_bytes()));
-    let result = try!(signer.finish());
+    let result = try!(signer.sign_to_vec());
     Ok(encode_config(&result, URL_SAFE))
 }
 
@@ -89,7 +89,7 @@ pub fn rsa_verify(pem_string: &str,
     let key = try!(PKey::from_rsa(rsa));
     let mut verifier = try!(Verifier::new(message_digest, &key));
     try!(verifier.update(data.as_bytes()));
-    let b = try!(verifier.finish(sig));
+    let b = try!(verifier.verify(sig));
     if b {
         Ok(())
     } else {
@@ -104,7 +104,7 @@ pub fn ecdsa_signature(pem_string: &str,
     let message_digest = create_message_digest(alg);
     let mut signer = try!(Signer::new(message_digest, &key));
     try!(signer.update(data.as_bytes()));
-    let result = try!(signer.finish());
+    let result = try!(signer.sign_to_vec());
     let raw_result = ecdsa_der_to_raw(&result, get_order_len(alg))?;
     Ok(encode_config(&raw_result, URL_SAFE))
 }
@@ -119,7 +119,7 @@ pub fn ecdsa_verify(pem_string: &str,
     try!(verifier.update(data.as_bytes()));
 
     let der_sig = ecdsa_raw_to_der(sig, get_order_len(alg))?;
-    let b = try!(verifier.finish(&der_sig));
+    let b = try!(verifier.verify(&der_sig));
     if b {
         Ok(())
     } else {
